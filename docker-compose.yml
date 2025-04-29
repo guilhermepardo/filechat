@@ -1,16 +1,35 @@
 services:
 
+  filechat:
+    container_name: filechat
+    build:
+      context: ./devops/dev
+      dockerfile: Dockerfile
+    tty: true
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - default
+    depends_on:
+      - mysqldb
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - 3000:80
+
   mysqldb:
     container_name: mysqldb
     image: mysql:latest
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
       MYSQL_DATABASE: homestead
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-root}
       MYSQL_ROOT_HOST: '%'
+    networks:
+      - default
     volumes:
-      - mysqldb-vol:/var/lib/mysql
+      - mysqldriver:/var/lib/mysql:rw
     ports:
       - "3306:3306"
 
@@ -22,9 +41,24 @@ services:
       - mysqldb
     environment:
       PMA_HOST: mysqldb
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
     ports:
       - "3002:80"
 
+  redis:
+    container_name: redis
+    image: redis:alpine
+    networks:
+      - default
+    volumes:
+      - redisdriver:/data
+    ports:
+      - 6379:6379
+
+networks:
+  default:
+    driver: bridge
+
 volumes:
-  mysqldb-vol:
+  mysqldriver:
+  redisdriver:
